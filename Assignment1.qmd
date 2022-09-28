@@ -1,0 +1,146 @@
+---
+title: "Step Detection Algorithms"
+author: "Tinashe Tapera"
+format: html
+---
+
+## Introduction
+
+In this assignment, we want to use accelerometer data collected from our own
+iOS devices to develop a simple step detection algorithm.
+
+We used the DataLogger app to access the accelerometer and sent the data
+automatically to our laptops. Now, we'll implement what we learned in class
+to detect steps.
+
+## Cursory Glance
+
+```{r}
+library(tidyverse)
+library(here)
+
+# for plotting
+library(gghighlight)
+
+acc <- read.csv(here("assignment1","data", "acce.csv"), header = FALSE)
+
+acc %>%
+  transmute(timestamp = V1, X = V2, Y = V3, Z = V4) %>%
+  mutate(timestamp = lubridate::as_datetime(timestamp/1000000000)) -> acc
+```
+
+```{r, include=FALSE, eval=FALSE}
+files <- list.files("~/Downloads", full.names = TRUE, pattern = "*.csv") %>%
+  str_subset("acce") %>%
+  map(read.csv, header=FALSE) %>%
+  map(function(x) {
+    x %>%
+      transmute(timestamp = V1, X = V2, Y = V3, Z = V4) %>%
+    mutate(timestamp = lubridate::as_datetime(timestamp/1000000000))
+  })
+  
+# the first sample
+top <- files[[1]]$timestamp[1]
+
+# the last sample
+bottom <- files[[1]]$timestamp[length(files[[1]]$timestamp)]
+
+# number of seconds
+num_seconds <- lubridate::interval(top, bottom) %>%
+  as.numeric("seconds")
+
+# number of samples per second
+nrow(files[[1]]) / num_seconds ## 504.0247
+```
+
+Here is what the data looks like:
+
+```{r}
+head(acc)
+```
+
+Let's check the sampling rate:
+
+```{r}
+acc %>%
+  mutate(minute = lubridate::minute(timestamp)) %>%
+  group_by(minute) %>%
+  summarise(n())
+```
+
+For minute 39 we have just under 6000 samples, per minute, which comes
+down to 
+100Hz.
+
+```{r}
+sampling_rate <- 100
+```
+
+
+This is a good sampling rate. Let's plot the full data set:
+
+```{r}
+acc %>%
+  pivot_longer(-timestamp) %>%
+  ggplot(aes(x=timestamp, y=value)) +
+  geom_line(aes(color=name))
+```
+
+
+## Calculate the Magnitude of Acceleration
+
+To combine the signal from different axes, we calculate the magnitude of
+the combined vectors.
+
+```{r}
+#| warning: false
+acc <-
+  acc %>%
+  mutate(mag = sqrt((X^2 + Y^2 + Z^2)))
+
+acc %>%
+  slice(2000:4000) %>%
+  pivot_longer(-timestamp) %>%
+  ggplot(aes(x=timestamp, y=value)) +
+  geom_line(aes(color=name)) +
+  gghighlight(name == "mag")
+```
+
+This data looks good.
+
+## Convert to Frequency Domain Data
+
+We can use the `stats::fft` function to get the frequency domain:
+
+```{r}
+freq <- acc %>%
+  slice(2000:4000) %>%
+  pull(mag) %>%
+  stats::fft()
+
+Mod(freq) %>%
+  plot(type="l")
+```
+
+So what we're seeing here are the high amplitudes of noise at the very high
+and very low frequencies. We can implement a low cutoff filter to get rid
+of low frequency noise.
+
+```{r}
+cutoffs <- c(5)
+b_filt <- signal::butter(3, cutoff / ( 0.5 * sampling_rate ), type="low")
+
+acc %>%
+  slice(2000:4000) %>%
+  mutate(filtered = signal::filter(b_filt, mag)) %>%
+  pivot_longer(-timestamp) %>%
+  filter(name == "mag" | name == "filtered") %>%
+  mutate(alpha = ifelse(name == "filtered", 0.5, 0.2)) -> acc_plot
+
+ggplot(acc_plot) +
+  geom_line(aes(x=timestamp, y=value)
+            ) +
+  gghighlight(name == "filtered")
+```
+
+
