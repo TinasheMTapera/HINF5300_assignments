@@ -9,6 +9,7 @@ format:
     chalkboard: true
     slide-number: true
 from: markdown+emoji
+preview-links: true
 editor: 
   markdown: 
     wrap: 72
@@ -17,29 +18,30 @@ editor:
 ## Introduction to the problem
 
 ::: columns
-::: {.column width="40%"}
+::: {.column width="50%"}
 ::: incremental
 -   mHealth is great!
     -   Ease of use
     -   Ease of implementation
     -   Loads of data
 :::
+
+![](https://c.tenor.com/AkkCayzhTHQAAAAC/my-phone-brings-me-joy-joy.gif){.absolute bottom=0 left=0 width="450" height="280"}
 :::
 
-::: {.column width="60%"}
+::: {.column width="50%"}
 ::: incremental
--   How do we know we're using the best models?
-:::
+- So many sensors, and so much longitudinal data
+- Validity: _How do we know we're using the best models?_
 :::
 :::
 
-------------------------------------------------------------------------
+![](https://www.mdpi.com/sensors/sensors-19-02164/article_deploy/html/images/sensors-19-02164-g002.png){.absolute bottom=0 right=0 width="500" height="280"}
+:::
 
-![So many
-sensors!](https://www.mdpi.com/sensors/sensors-19-02164/article_deploy/html/images/sensors-19-02164-g002.png)
 
--   Sensors can collect massive amounts of data with features related to
-    **time**, ie **longitudinal data**
+
+
 
 ------------------------------------------------------------------------
 
@@ -131,6 +133,8 @@ tribble(
 
 ---
 
+### Data Processing
+
 Raw accelerometer data was binned into hours and averaged:
 
 ```{r}
@@ -163,7 +167,7 @@ tribble(
   gt()
 ```
 
-(Screen on-off events were similarly binned)
+(Screen on-off events were similarly binned and _summed_)
 
 ------------------------------------------------------------------------
 
@@ -227,6 +231,8 @@ It's all about **probabilities of changing states.**
     vs low activity
 -   Incorporates mixed modeling to account for the effect of the hour of
     day on the *likelihood* of rest vs. activity
+    
+![](https://miro.medium.com/max/1400/1*1r_s5QKOk2LRFjazaXghgA.gif){.absolute bottom=0 left=300 width="400" height="300"}
 
 ------------------------------------------------------------------------
 
@@ -324,4 +330,13 @@ moderated by the likelihood of changing activity
 
 ![Fin.](https://c.tenor.com/l7oOS4eFI3QAAAAC/lotr-done.gif)
 
+## Discussion
 
+- Diarised methods?
+  - Social Rhythm Metric ([SRM](https://pubmed.ncbi.nlm.nih.gov/2299336/))
+
+- Sample sizes?
+
+- Modeling for inference vs. prediction?
+
+![Acknowledgements!](acknowledgements.png)
